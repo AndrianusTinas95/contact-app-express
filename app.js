@@ -1,6 +1,7 @@
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
-const morgan = require('morgan');
+const { loadContacts, findContact } = require('./utils/contact.js');
+
 const app = express();
 const port = 3000;
 
@@ -9,15 +10,10 @@ app.set('view engine', 'ejs');
 
 // Third-party Middleware
 app.use(expressLayouts);
-app.use(morgan('dev'));
 
 // buildin middleware
 app.use(express.static('public'));
 
-app.use((req,res,next)=>{
-    console.log('Time: ',Date.now());
-    next();
-});
 
 app.get('/',(req,res)=>{
     const mahasiswa =[
@@ -40,7 +36,6 @@ app.get('/',(req,res)=>{
         title:'Home',
         mahasiswa
     });
-    // res.sendFile('./index.html',{root:x__dirname})
 });
 
 app.get('/about',(req,res)=>{
@@ -51,15 +46,23 @@ app.get('/about',(req,res)=>{
 });
 
 app.get('/contact',(req,res)=>{
+    const contacts = loadContacts();
     res.render('contact',{
         layout:'layouts/main',
-        title:'contact'
+        title:'contact',
+        contacts
     });
 });
 
-app.get('/product/:id',(req,res)=>{
-    res.send(`Product id :  ${req.params.id} <br> Category : ${req.query.category}`);
+app.get('/contact/:nama',(req,res)=>{
+    const contact = findContact(req.params.nama);
+    res.render('detail',{
+        layout:'layouts/main',
+        title:'Detail Contact',
+        contact
+    });
 });
+
 
 app.use('/',(req,res)=>{
     res.status(404);
