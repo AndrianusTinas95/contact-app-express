@@ -1,9 +1,10 @@
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
-const { loadContacts, findContact, addContact,cekDuplikat } = require('./utils/contact.js');
+const { loadContacts, findContact, addContact,cekDuplikat, deleteContact,updateContacts } = require('./utils/contact.js');
 const { body, validationResult,check } = require('express-validator');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const { response } = require('express');
 flash = require('connect-flash');
 
 
@@ -102,6 +103,59 @@ app.post('/contact',[
     }else{
         addContact(req.body);
         req.flash('msg','Data kontak berhasil ditambahkan!');
+        res.redirect('/contact');
+    }
+});
+
+//proses delate kontak
+app.get('/contact/delete/:nama',(req,res) => {
+    const contact = findContact(req.params.nama);
+    if(!contact){
+        res.status(404);
+        res.send('<h1>404</h1>');
+    }else{
+        deleteContact(req.params.nama);
+        req.flash('msg','Data Kontak Berhasil dihapus');
+        res.redirect('/contact');
+    }
+});
+
+// ubah data kontak
+app.get('/contact/edit/:nama',(req,res)=>{
+    const contact = findContact(req.params.nama);
+
+    res.render('edit-contact',{
+        layout:'layouts/main',
+        title:'form ubah kontak',
+        contact
+    });
+});
+
+// ubah data kontak
+app.post('/contact/update',[
+    body('nama').custom((value,{req})=>{
+        const duplikat = cekDuplikat(value);
+        if(value !== req.body.oldNama && duplikat){
+            throw new Error('Nama contact sudah terdaftar')
+        }
+        return true;
+    }),
+    check('email','Email Tidak Valid!').isEmail(),
+    check('noHP','Nomor HP tidak valid').isMobilePhone('id-ID')
+], (req, res) => {
+    
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        
+        res.render('edit-contact',{
+            'title':'Form ubah data kontak',
+            layout:'layouts/main',
+            errors:errors.array(),
+            contact:req.body,
+        })
+    }else{
+        updateContacts(req.body);
+        req.flash('msg','Data kontak berhasil diubah!');
         res.redirect('/contact');
     }
 });
